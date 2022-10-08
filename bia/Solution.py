@@ -95,7 +95,14 @@ class Solution:
         for idx in range(count):
             p = []
             for idx in range(self.dimension):
-                p.append(np.random.normal(point[idx], sigma))
+                val = np.random.normal(point[idx], sigma)
+                if val > self.upper_bound:
+                    # print(val)
+                    val = self.upper_bound
+                elif val < self.lower_bound:
+                    # print(val)
+                    val = self.lower_bound
+                p.append(val)
             p.append(self.function(p))
             neighbours.append(p)
         return neighbours
@@ -121,22 +128,22 @@ class Solution:
     def simulated_annealing(self):
         points = []
         T_0 = 100
-        T_min = 0.5
-        alpha = 0.95
+        T_min = 0.1
+        alpha = 0.90
         T = T_0
         init_point = self.generate_random()
         global_extreme_point = init_point
         points.append([init_point])
         while T > T_min:
             new_point = self.generate_neighbours(
-                point=global_extreme_point, count=1, sigma=0.8
+                point=global_extreme_point, count=1, sigma=2.5
             )[0]
-
+            print(new_point)
             if new_point[2] < global_extreme_point[2]:
                 global_extreme_point = new_point
             else:
                 r = np.random.uniform(low=0, high=1, size=1)[0]
-                condition = pow(np.e, -(new_point[2] - global_extreme_point[2]) / T)
+                condition = np.e ** -(new_point[2] - global_extreme_point[2]) / T
                 if r < condition:
                     global_extreme_point = new_point
             T = T * alpha
