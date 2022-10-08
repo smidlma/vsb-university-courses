@@ -17,7 +17,8 @@ public class SeleniumTest {
 
     @BeforeEach
     public void setup() {
-        driver = new FirefoxDriver();
+        driver = new FirefoxDriver;
+        
     }
 
     @AfterEach
