@@ -21,7 +21,7 @@ public class SeleniumTest {
     @BeforeEach
     public void setup() {
         driver = new ChromeDriver();
-
+        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
     }
 
     @AfterEach
@@ -35,7 +35,7 @@ public class SeleniumTest {
     @Test
     public void testCorrectLogin() {
         driver.get("https://bakery-flow.demo.vaadin.com/login");
-        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
+        // driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
         WebElement username = driver.findElement(By.id("vaadinLoginUsername"));
         username.sendKeys("admin@vaadin.com");
@@ -55,7 +55,7 @@ public class SeleniumTest {
     @Test
     public void testIncorrectCredentials() {
         driver.get("https://bakery-flow.demo.vaadin.com/login");
-        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
+        // driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
         WebElement username = driver.findElement(By.id("vaadinLoginUsername"));
         username.sendKeys("invalid@vaadin.com");
@@ -75,7 +75,6 @@ public class SeleniumTest {
     public void testAuthorization() {
         // Login as Barista
         driver.get("https://bakery-flow.demo.vaadin.com/login");
-        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
         WebElement username = driver.findElement(By.id("vaadinLoginUsername"));
         username.sendKeys("barista@vaadin.com");
@@ -84,8 +83,11 @@ public class SeleniumTest {
         WebElement loginBtn = driver.findElement(By.tagName("vaadin-button"));
         loginBtn.click();
 
+        // Driver refresh
+        driver.navigate().refresh();
         // Access secured route
         driver.get("https://bakery-flow.demo.vaadin.com/users");
+
         assertEquals("Access denied", driver.getTitle());
     }
 

@@ -5,11 +5,34 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <chrono>
 #include <omp.h>
+
+#define PARALER
 
 using namespace std;
 
 vector<double> distances;
+
+std::chrono::high_resolution_clock::time_point t1;
+std::chrono::high_resolution_clock::time_point t2;
+
+void start_timer()
+{
+	std::cout << "Timer started" << endl;
+	t1 = std::chrono::high_resolution_clock::now();
+}
+
+void end_timer()
+{
+	t2 = std::chrono::high_resolution_clock::now();
+	std::cout << "Timer ended" << endl;
+}
+void print_elapsed_time()
+{
+	std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " milliseconds\n"
+			  << endl;
+}
 
 void print_distances(vector<double> &dist, unsigned int n)
 {
@@ -32,7 +55,7 @@ void read_tsp_file(const char *fname)
 
 	if (file.is_open())
 	{
-		vector<double> xs, ys, ids, min_vector;
+		vector<double> xs, ys, ids, min_vector, cities;
 
 		std::string line;
 
@@ -43,7 +66,7 @@ void read_tsp_file(const char *fname)
 		std::getline(file, line);
 		std::getline(file, line);
 		std::getline(file, line);
-		const int N = 10;
+		const int N = 11;
 		int j = 0;
 		while (std::getline(file, line) && j < N)
 		{
@@ -75,37 +98,53 @@ void read_tsp_file(const char *fname)
 		// }
 		// int start_town = 1;
 
-		float min_travel_dist = 0;
-
-		int perm_base_size = ids.size();
-#pragma omp parallel for
-		for (int i = 0; i < perm_base_size; i++)
+		float min_travel_dist = MAXFLOAT;
+		for (int i = 1; i < ids.size(); i++)
 		{
-			auto perm = ids;
-			std::rotate(perm.begin(), perm.begin() + i, perm.begin() + i + 1);
+			cities.push_back(ids[i]);
+		}
+		start_timer();
 
+#ifdef PARALER
+#pragma omp parallel for
+		for (int i = 0; i < cities.size(); ++i)
+		{
+			// Make a copy of permutation_base
+			auto perm = cities;
+			// rotate the i'th  element to the front
+			// keep the other elements sorted
+			std::rotate(perm.begin(), perm.begin() + i, perm.begin() + i + 1);
+			// Now go through all permutations of the last `n-1` elements.
+			// Keep the first element fixed.
+			float tmp = MAXFLOAT;
+			vector<double> path;
 			do
 			{
-				float travel_distance = 0;
-				for (int i = 0; i < perm.size() - 1; i++)
+				float travel_distance = compute_distance(xs[0], ys[0], xs[perm[0] - 1], ys[perm[0] - 1]);
+				for (int i = 0; i < perm.size(); i++)
 				{
 					travel_distance += compute_distance(xs[perm[i] - 1], ys[perm[i] - 1], xs[perm[i + 1] - 1], ys[perm[i + 1] - 1]);
 				}
-#pragma omp critical
-
-				if (min_travel_dist == 0 || travel_distance < min_travel_dist)
+				if (travel_distance < tmp)
 				{
-					min_travel_dist = travel_distance;
-					min_vector = ids;
+					tmp = travel_distance;
+					path = perm;
 				}
-
 			} while (std::next_permutation(perm.begin() + 1, perm.end()));
+#pragma omp critical
+			{
+				if (tmp < min_travel_dist)
+				{
+					min_travel_dist = tmp;
+					min_vector = path;
+				}
+			}
 		}
-
-		while (next_permutation(ids.begin(), ids.end()))
+#else
+		do
 		{
 			float travel_distance = 0;
-			for (int i = 0; i < ids.size() - 1; i++)
+			for (int i = 0; i < ids.size(); i++)
 			{
 				travel_distance += compute_distance(xs[ids[i] - 1], ys[ids[i] - 1], xs[ids[i + 1] - 1], ys[ids[i + 1] - 1]);
 			}
@@ -115,8 +154,13 @@ void read_tsp_file(const char *fname)
 				min_travel_dist = travel_distance;
 				min_vector = ids;
 			}
-		}
+		} while (next_permutation(ids.begin() + 1, ids.end()));
+#endif
+		end_timer();
+		print_elapsed_time();
 
+		std::cout
+			<< "1 ";
 		for (auto id : min_vector)
 		{
 			std::cout << id << " ";

@@ -25,13 +25,8 @@ public class PayGatewayTest {
     @ParameterizedTest(name = "Payment test balance={0}, amount={1}, card={2}, res={3}")
     @MethodSource("generateData")
     public void testPayment(double balance, double amount, Card card, boolean result) {
-
-
-    Mockito.when(accountRepository.find(1)).thenReturn(new Account(balance,card));
-
-    assertEquals(result, accountService.isAccountAbleToPay(1, amount));
-
-
+        Mockito.when(accountRepository.find(1)).thenReturn(new Account(balance,card));
+        assertEquals(result, accountService.isAccountAbleToPay(1, amount));
     }
 
     static Stream<Arguments> generateData() {
