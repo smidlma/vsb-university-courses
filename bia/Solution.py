@@ -134,11 +134,13 @@ class Solution:
         init_point = self.generate_random()
         global_extreme_point = init_point
         points.append([init_point])
+        sigma = self.upper_bound / 12
+        print(sigma)
         while T > T_min:
             new_point = self.generate_neighbours(
-                point=global_extreme_point, count=1, sigma=2.5
+                point=global_extreme_point, count=1, sigma=sigma
             )[0]
-            print(new_point)
+            # print(new_point)
             if new_point[2] < global_extreme_point[2]:
                 global_extreme_point = new_point
             else:
