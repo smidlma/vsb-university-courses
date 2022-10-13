@@ -1,7 +1,10 @@
 {-# HLINT ignore "Use foldr" #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# HLINT ignore "Use foldr" #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+import Data.Char (isLower, toLower, toUpper)
 import Distribution.Compat.Semigroup (Last' (getLast'))
 
 plus x y = x + y
@@ -68,3 +71,51 @@ reverse'' xs = tmp xs []
 take' 0 _ = []
 take' n [] = []
 take' n (x : xs) = x : take' (n -1) xs
+
+oddList :: Int -> Int -> [Int]
+oddList a b = [x | x <- [a .. b], odd x]
+
+quicksort :: (Ord a) => [a] -> [a]
+quicksort [] = []
+quicksort [x] = [x]
+quicksort (x : xs) =
+  let left = filter (< x) xs
+      right = filter (>= x) xs
+   in quicksort left ++ [x] ++ quicksort right
+
+uni [] = []
+uni (x : xs) = x : uni (filter (/= x) xs)
+
+count x xs = length (filter (== x) xs)
+
+countThem xs = zip (uni xs) [count x xs | x <- uni xs]
+
+type Pic = [String]
+
+pp :: Pic -> IO ()
+pp x = putStr (concat (map (++ "\n") x))
+
+pic :: Pic
+pic =
+  [ "....#....",
+    "...###...",
+    "..#.#.#..",
+    ".#..#..#.",
+    "....#....",
+    "....#....",
+    "....#####"
+  ]
+
+flipV = map reverse
+
+flipH = reverse
+
+above p1 p2 = p1 ++ p2
+
+sideBySide p1 [] = p1
+sideBySide p1 p2 = zipWith (++) p1 p2
+
+toCol xs = [[x] | x <- reverse xs]
+
+rotateL [] = []
+rotateL (x : xs) = sideBySide (toCol x) (rotateL xs)
