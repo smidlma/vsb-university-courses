@@ -1,5 +1,5 @@
 from Function import VALID_FUNCTION_NAMES, Function
-from Solution import Solution
+from Solution import Solution, Tsp
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -17,11 +17,14 @@ def main():
         "zakharov": Function("zakharov", -5, 10),
     }
 
-    for name in VALID_FUNCTION_NAMES:
-        f = functions.get(name)
-        solution = Solution(2, f)
-        solution.simulated_annealing()
-        plt.show()
+    # for name in VALID_FUNCTION_NAMES:
+    #     f = functions.get(name)
+    #     solution = Solution(2, f)
+    #     solution.simulated_annealing()
+    #     plt.show()
+
+    s = Tsp(20, 0, 350, 350)
+    s.tsp()
 
 
 if __name__ == "__main__":

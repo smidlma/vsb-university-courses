@@ -1,3 +1,5 @@
+from calendar import c
+from math import sqrt
 from tkinter import N
 import numpy as np
 import matplotlib.pyplot as plt
@@ -135,7 +137,7 @@ class Solution:
         global_extreme_point = init_point
         points.append([init_point])
         sigma = self.upper_bound / 12
-        print(sigma)
+        print(f"sigma: {sigma}")
         while T > T_min:
             new_point = self.generate_neighbours(
                 point=global_extreme_point, count=1, sigma=sigma
@@ -152,3 +154,136 @@ class Solution:
             points.append([global_extreme_point])
 
         self.show(points)
+
+
+class Tsp:
+    def __init__(self, number_of_nodes, min, max, population_size) -> None:
+        self.number_of_nodes = number_of_nodes
+        self.min = min
+        self.max = max
+        self.population_size = population_size
+
+    def evaluate(self, path, dist):
+        res = 0
+        for idx in range(len(path) - 1):
+            res = res + dist[path[idx]["id"]][path[idx + 1]["id"]]
+        return res
+
+    def crossover(self, parent_A, parent_B):
+        offspring = []
+        border = np.random.randint(1, self.number_of_nodes)
+        for i in range(border):
+            offspring.append(parent_A[i])
+        rest_of_towns = list(filter(lambda x: x not in offspring, parent_B))
+        return [*offspring, *rest_of_towns]
+
+    def mutate(self, offspring_AB):
+        t1_idx = np.random.randint(1, self.number_of_nodes)
+        t2_idx = np.random.randint(1, self.number_of_nodes)
+        tmp = offspring_AB[t1_idx]
+        offspring_AB[t1_idx] = offspring_AB[t2_idx]
+        offspring_AB[t2_idx] = tmp
+        return offspring_AB
+
+    def calc_distance(self, c1, c2):
+        return sqrt((c2["x"] - c1["x"]) ** 2 + (c2["y"] - c1["y"]) ** 2)
+
+    def print_distance_matrix(self, dist):
+        for i in range(len(dist)):
+            print(dist[i])
+
+    def tsp(self):
+        start_city = {
+            "id": 0,
+            "x": np.random.randint(self.min, self.max),
+            "y": np.random.randint(self.min, self.max),
+        }
+        cities = [
+            {
+                "id": idx + 1,
+                "x": np.random.randint(self.min, self.max),
+                "y": np.random.randint(self.min, self.max),
+            }
+            for idx in range(self.number_of_nodes - 1)
+        ]
+        cities_tmp = [start_city, *cities]
+        distance_matrix = [
+            [
+                self.calc_distance(cities_tmp[i], cities_tmp[j])
+                for j in range(len(cities_tmp))
+            ]
+            for i in range(len(cities_tmp))
+        ]
+
+        NP = self.number_of_nodes
+        G = self.population_size
+        population = [[start_city, *np.random.permutation(cities)] for i in range(NP)]
+        evaluation = list(map(lambda x: self.evaluate(x, distance_matrix), population))
+        paths = []
+
+        paths.append(population[evaluation.index(min(evaluation))])
+
+        for i in range(G):
+            new_population = population.copy()
+            for j in range(NP):
+                parent_A = population[j]
+                parent_B_index = np.random.randint(1, NP)
+                while parent_B_index == j:
+                    parent_B_index = np.random.randint(1, NP)
+                parent_B = population[parent_B_index]
+                offspring_AB = self.crossover(parent_A, parent_B)
+
+                if np.random.uniform(0, 1) < 0.5:
+                    offspring_AB = self.mutate(offspring_AB)
+                offspring_eval = self.evaluate(offspring_AB, distance_matrix)
+                parent_A_eval = self.evaluate(parent_A, distance_matrix)
+                if offspring_eval < parent_A_eval:
+                    new_population[j] = offspring_AB
+            population = new_population
+
+            evaluation = list(
+                map(lambda x: self.evaluate(x, distance_matrix), population)
+            )
+            best_pop = population[evaluation.index(min(evaluation))]
+            best_pop.append(start_city)
+            # print(best_pop)
+            # exit()
+            paths.append(best_pop)
+
+        self.show(paths)
+
+    def show(self, paths):
+        x = list(map(lambda towns: list(map(lambda town: town["x"], towns)), paths))
+        y = list(map(lambda towns: list(map(lambda town: town["y"], towns)), paths))
+        fig, ax = plt.subplots()
+        (ln,) = plt.plot([], [], "ro-", animated=True)
+        text = ax.text(
+            -30,
+            self.max + 10,
+            "",
+            ha="left",
+            va="bottom",
+            clip_on=True,
+            rotation=0,
+            fontsize=12,
+        )
+
+        def init():
+            ax.set_xlim(self.min - 30, self.max + 30)
+            ax.set_ylim(self.min - 30, self.max + 30)
+            return (ln, text)
+
+        def update(frame):
+            ln.set_data(x[frame], y[frame])
+            text.set_text(f"Generation {frame}")
+            return (ln, text)
+
+        ani = animation.FuncAnimation(
+            fig,
+            update,
+            frames=range(len(paths)),
+            init_func=init,
+            interval=50,
+            blit=True,
+        )
+        plt.show()
