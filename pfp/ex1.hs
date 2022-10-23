@@ -130,7 +130,7 @@ data Expr
   | Sub Expr Expr
   | Mul Expr Expr
   | Div Expr Expr
-  | Var Char
+  |  Var Char
   deriving (Eq)
 
 instance Show Expr where
