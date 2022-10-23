@@ -1,4 +1,5 @@
 from calendar import c
+from copy import deepcopy
 from math import sqrt
 from tkinter import N
 import numpy as np
@@ -154,6 +155,86 @@ class Solution:
             points.append([global_extreme_point])
 
         self.show(points)
+
+    def check_boundaries(self, v):
+        if v[0] > self.upper_bound:
+            v[0] = self.upper_bound
+        if v[0] < self.lower_bound:
+            v[0] = self.lower_bound
+
+        if v[1] > self.upper_bound:
+            v[1] = self.upper_bound
+        if v[1] < self.lower_bound:
+            v[1] = self.lower_bound
+        return v
+
+    def differential_evolution(self):
+        NP = 20
+        F = 0.5
+        CR = 0.5
+        G_max = 50
+        G_curr = 0
+        points = []
+
+        population = [self.generate_random() for idx in range(NP)]
+        points.append(population)
+
+        while G_curr < G_max:
+            new_popopulation = deepcopy(population)
+            for i, x in enumerate(population):
+                r1_pop = list(filter(lambda p: p != x, population))
+                r1 = r1_pop[np.random.randint(0, len(r1_pop) - 1)]
+                r2_pop = list(filter(lambda p: p != x and p != r1, population))
+                r2 = r2_pop[np.random.randint(0, len(r2_pop) - 1)]
+                r3_pop = list(
+                    filter(lambda p: p != x and p != r1 and p != r2, population)
+                )
+                r3 = r3_pop[np.random.randint(0, len(r3_pop) - 1)]
+
+                v = [(r1[0] - r2[0]) * F + r3[0], (r1[1] - r2[1]) * F + r3[1]]
+                v = self.check_boundaries(v)
+                u = np.zeros(self.dimension)
+                j_rnd = np.random.randint(0, self.dimension)
+
+                for j in range(self.dimension):
+                    if np.random.uniform() < CR or j == j_rnd:
+                        u[j] = v[j]
+                    else:
+                        u[j] = x[j]
+                f_u = self.function([u[0], u[1]])
+                if f_u <= x[2]:
+                    new_popopulation[i] = [u[0], u[1], f_u]
+            population = new_popopulation
+            points.append(new_popopulation)
+            G_curr = G_curr + 1
+        self.show(points)
+
+
+# pop = Generate NP random individuals (you can use the class Solution mentioned in Exercise 1)
+# g = 0
+
+# while g < g_maxim :
+#   new_pop = deepcopy(pop) # new generation
+#   for each i, x in enumerate(pop): # x is also denoted as a target vector
+#     r1, r2, r3 = select random indices(from 0 to NP-1) such that r1!=r2!=r3!=i
+#     v = (x_r1.params – x_r2.params)*F + x_r3.params # mutation vector. TAKE CARE FOR BOUNDARIES!
+#     u = np.zeros(dimension) # trial vector
+#     j_rnd = np.random.randint(0, dimension)
+
+#     for j in range(dimension):
+# 	if np.random.uniform() < CR or j == j_rnd:
+# 	  u[j] = v[j] # at least 1 parameter should be from a mutation vector v
+# 	else:
+# 	  u[j] = x_i.params[j]
+
+#     f_u = Evaluate trial vector u
+
+#     if f_u is better or equals to f_x_i: # We always accept a solution with the same fitness as a target vector
+# 	new_x = Solution(dimension, lower_bound, upper_bound)
+#           new_x.params = u
+#           new_x.f = f_u
+#     pop = new_pop
+#   g += 1
 
 
 class Tsp:

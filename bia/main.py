@@ -17,14 +17,16 @@ def main():
         "zakharov": Function("zakharov", -5, 10),
     }
 
-    # for name in VALID_FUNCTION_NAMES:
-    #     f = functions.get(name)
-    #     solution = Solution(2, f)
-    #     solution.simulated_annealing()
-    #     plt.show()
+    # Solution visualization
+    for name in VALID_FUNCTION_NAMES:
+        f = functions.get(name)
+        solution = Solution(2, f)
+        solution.differential_evolution()
+        plt.show()
 
-    s = Tsp(20, 0, 350, 350)
-    s.tsp()
+    # TSP visualization
+    # s = Tsp(20, 0, 350, 350)
+    # s.tsp()
 
 
 if __name__ == "__main__":

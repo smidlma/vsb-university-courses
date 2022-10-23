@@ -83,21 +83,29 @@ class Function:
         )
 
     def ackley(self, params=[]) -> float:
-        a = 20
-        b = 0.2
-        c = 2 * np.pi
-        d = 2
-        sum_pow = 0
-        sum_cos = 0
-        for item in params:
-            sum_pow += item**2
-            sum_cos += np.cos(c * item)
         return (
-            -a * np.exp(-b * np.sqrt(1 / d * sum_pow))
-            - np.exp(1 / d * (sum_cos))
-            + a
+            -20.0 * np.exp(-0.2 * np.sqrt(0.5 * (params[0] ** 2 + params[1] ** 2)))
+            - np.exp(
+                0.5 * (np.cos(2 * np.pi * params[0]) + np.cos(2 * np.pi * params[1]))
+            )
             + np.e
+            + 20
         )
+        # a = 20
+        # b = 0.2
+        # c = 2 * np.pi
+        # d = 2
+        # sum_pow = 0
+        # sum_cos = 0
+        # for item in params:
+        #     sum_pow += item**2
+        #     sum_cos += np.cos(c * item)
+        # return (
+        #     -a * np.exp(-b * np.sqrt(1 / d * sum_pow))
+        #     - np.exp(1 / d * (sum_cos))
+        #     + a
+        #     + np.e
+        # )
 
     def __call__(self, params=[]) -> float:
         return getattr(self, self.name)(params)
