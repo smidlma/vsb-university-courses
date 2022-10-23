@@ -2,9 +2,13 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# HLINT ignore "Use foldr" #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# HLINT ignore "Use foldr" #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# HLINT ignore "Use foldr" #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-import Data.Char (isLower, toLower, toUpper)
+import Data.Char (isLower, ord, toLower, toUpper)
 import Distribution.Compat.Semigroup (Last' (getLast'))
 
 plus x y = x + y
@@ -119,3 +123,39 @@ toCol xs = [[x] | x <- reverse xs]
 
 rotateL [] = []
 rotateL (x : xs) = sideBySide (toCol x) (rotateL xs)
+
+data Expr
+  = Num Int
+  | Add Expr Expr
+  | Sub Expr Expr
+  | Mul Expr Expr
+  | Div Expr Expr
+  | Var Char
+  deriving (Eq)
+
+instance Show Expr where
+  show = showExpr
+
+eval :: Expr -> Int
+eval (Num a) = a
+eval (Add a b) = eval a + eval b
+eval (Sub a b) = eval a - eval b
+eval (Mul a b) = eval a * eval b
+eval (Div a b) = eval a `div` eval b
+eval (Var a) = ord a
+
+showExpr :: Expr -> String
+showExpr (Num a) = show a
+showExpr (Var a) = [a]
+showExpr (Add l r) = "(" ++ showExpr l ++ "+" ++ showExpr r ++ ")"
+showExpr (Sub l r) = "(" ++ showExpr l ++ "-" ++ showExpr r ++ ")"
+showExpr (Mul l r) = "(" ++ showExpr l ++ "*" ++ showExpr r ++ ")"
+showExpr (Div l r) = "(" ++ showExpr l ++ "%" ++ showExpr r ++ ")"
+
+deriv :: Expr -> Char -> Expr
+deriv (Num a) x = Num 0
+deriv (Var a) x
+  | x == a = Num 1
+  | otherwise = Num 0
+deriv (Add a b) x = Add (deriv a x) (deriv b x)
+deriv (Mul a b) x = Mul (deriv a x) (deriv a x)
