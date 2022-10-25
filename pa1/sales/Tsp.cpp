@@ -24,6 +24,31 @@ struct matrix_reduction
     double cost;
 };
 
+struct Node
+{
+    int idx;
+    std::vector<double> reduction_matrix;
+    double cost;
+};
+std::chrono::high_resolution_clock::time_point t1;
+std::chrono::high_resolution_clock::time_point t2;
+
+void start_timer()
+{
+    std::cout << "Timer started" << std::endl;
+    t1 = std::chrono::high_resolution_clock::now();
+}
+
+void end_timer()
+{
+    t2 = std::chrono::high_resolution_clock::now();
+    std::cout << "Timer ended" << std::endl;
+}
+void print_elapsed_time()
+{
+    std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " milliseconds\n"
+              << std::endl;
+}
 void print_distances(std::vector<double> &dist, unsigned int n)
 {
     for (unsigned int i = 0; i < dist.size(); i++)
@@ -211,92 +236,98 @@ int get_val_from_q(std::queue<int> q, int idx)
     return q.front();
 }
 
+Node find_min_node(std::vector<Node> nodes)
+{
+    Node min = nodes[0];
+    for (int i = 1; i < nodes.size(); i++)
+    {
+        if (nodes[i].cost < min.cost)
+        {
+            min = nodes[i];
+        }
+    }
+
+    return min;
+}
 void run_tsp(tsp tsp_holder)
 {
     double upper_bound = INFINITY;
     matrix_reduction initial = reduce_matrix(tsp_holder.distanceMatrix);
     double root_cost = initial.cost;
     int size = sqrt(initial.matrix.size());
+    std::vector<Node> nodes_to_explore;
+    std::vector<Node> visited_nodes;
+    Node root_node = {0, initial.matrix, initial.cost};
+    Node current_node = root_node;
 
-    std::cout << "Root node cost: " << root_cost << std::endl;
-    print_distances(initial.matrix, size);
-    std::vector<int> path;
-    path.push_back(0);
-
-    double tmp_min_cost = INFINITY;
-
-    // std::vector<int> stack;
-    // for (int i = 1; i < size; i++)
-    // {
-    //     std::vector<double> local_matrix = initial.matrix;
-    //     double cost = 0;
-    //     // Set row 0 and col i to infinity
-    //     for (int j = 0; j < size; j++)
-    //     {
-    //         // ROW
-    //         local_matrix[j + 0 * size] = INFINITY;
-    //         // COL
-    //         local_matrix[i + j * size] = INFINITY;
-    //     }
-    //     // Set [0,i] to inf
-    //     local_matrix[0 + i * size] = INFINITY;
-
-    //     auto tmp = reduce_matrix(local_matrix);
-    //     // print_distances(tmp.matrix, size);
-    //     cost = root_cost + tmp.cost + initial.matrix[i + 0 * size];
-    //     if (cost < tmp_min_cost)
-    //     {
-    //         tmp_min_cost = cost;
-    //         path = {0, i};
-    //         stack.clear();
-    //         for (int k = 1; k < size; k++)
-    //         {
-    //             if (k != i)
-    //                 stack.push_back(k);
-    //         }
-    //     }
-    // }
-
-    // print_vector(stack.);
-    std::queue<int> q;
-    for (int i = 0; i < size; i++)
+    // add first layer
+    for (int i = 1; i < size; i++)
     {
-        q.push(i);
+        Node n;
+        n.idx = i;
+        nodes_to_explore.push_back(n);
     }
 
-    while (!q.empty())
+    while (!nodes_to_explore.empty())
     {
-        int curr_node_idx = q.front();
-        q.pop();
-        for (int i = 0; i < q.size(); i++)
+        for (int i = 0; i < nodes_to_explore.size(); i++)
         {
-            std::vector<double> local_matrix = initial.matrix;
-            double cost = 0;
+            std::vector<double> local_matrix = current_node.reduction_matrix;
+
             // Set current row and col q[i] to infinity
             for (int j = 0; j < size; j++)
             {
                 // ROW
-                local_matrix[j + curr_node_idx * size] = INFINITY;
+                local_matrix[j + current_node.idx * size] = INFINITY;
                 // COL
-                local_matrix[get_val_from_q(q, i) + j * size] = INFINITY;
+                local_matrix[nodes_to_explore[i].idx + j * size] = INFINITY;
             }
-            // Set [0,i] to inf
-            local_matrix[curr_node_idx + get_val_from_q(q, i) * size] = INFINITY;
+            // Set [curr,i] to inf
+            local_matrix[current_node.idx + nodes_to_explore[i].idx * size] = INFINITY;
 
             auto tmp = reduce_matrix(local_matrix);
-            // print_distances(tmp.matrix, size);
-            cost = root_cost + tmp.cost + initial.matrix[get_val_from_q(q, i) + curr_node_idx * size];
-            if (cost < tmp_min_cost)
+            nodes_to_explore[i].reduction_matrix = tmp.matrix;
+            nodes_to_explore[i].cost = current_node.cost + tmp.cost + root_node.reduction_matrix[nodes_to_explore[i].idx + current_node.idx * size];
+        }
+        // find min cost of level
+        Node min_node = find_min_node(nodes_to_explore);
+
+        // std::cout << min_node.cost << std::endl;
+        visited_nodes.push_back(current_node);
+        // visited_nodes.push_back(min_node);
+        nodes_to_explore.clear();
+        // generate new path
+        for (int i = 1; i < size; i++)
+        {
+            bool add_flag = true;
+            for (int j = 0; j < visited_nodes.size(); j++)
             {
-                // generate next path of the tree and remember visited nodes
-                // remeber evalkuated costs for nodes
+                if (visited_nodes[j].idx == i)
+                {
+                    add_flag = false;
+                    break;
+                }
+            }
+            if (add_flag)
+            {
+                Node n;
+                n.idx = i;
+                nodes_to_explore.push_back(n);
             }
         }
+        current_node = min_node;
     }
+    visited_nodes.push_back(root_node);
+    for (auto v : visited_nodes)
+    {
+        std::cout << v.idx << ":" << v.cost << ", ";
+    }
+    std::cout << "Cost: " << visited_nodes[visited_nodes.size() - 2].cost << std::endl;
 }
 
 int main(int argc, char const *argv[])
 {
+    // https://www.gatevidyalay.com/travelling-salesman-problem-using-branch-and-bound-approach/
     std::vector<double> dst = {INFINITY, 4, 12, 7,
                                5, INFINITY, INFINITY, 18,
                                11, INFINITY, INFINITY, 6,
@@ -305,8 +336,10 @@ int main(int argc, char const *argv[])
     test_holder.distanceMatrix = dst;
     test_holder.ids = {0, 1, 2, 3};
     tsp tsp_holder = read_tsp_file("ulysses22.tsp.txt");
-    // print_distances(tsp_holder.distanceMatrix, sqrt(tsp_holder.distanceMatrix.size()));
-    // std::cout << std::endl;
+
+    start_timer();
     run_tsp(test_holder);
+    end_timer();
+    print_elapsed_time();
     return 0;
 }
