@@ -210,33 +210,6 @@ class Solution:
         self.show(points)
 
 
-# pop = Generate NP random individuals (you can use the class Solution mentioned in Exercise 1)
-# g = 0
-
-# while g < g_maxim :
-#   new_pop = deepcopy(pop) # new generation
-#   for each i, x in enumerate(pop): # x is also denoted as a target vector
-#     r1, r2, r3 = select random indices(from 0 to NP-1) such that r1!=r2!=r3!=i
-#     v = (x_r1.params – x_r2.params)*F + x_r3.params # mutation vector. TAKE CARE FOR BOUNDARIES!
-#     u = np.zeros(dimension) # trial vector
-#     j_rnd = np.random.randint(0, dimension)
-
-#     for j in range(dimension):
-# 	if np.random.uniform() < CR or j == j_rnd:
-# 	  u[j] = v[j] # at least 1 parameter should be from a mutation vector v
-# 	else:
-# 	  u[j] = x_i.params[j]
-
-#     f_u = Evaluate trial vector u
-
-#     if f_u is better or equals to f_x_i: # We always accept a solution with the same fitness as a target vector
-# 	new_x = Solution(dimension, lower_bound, upper_bound)
-#           new_x.params = u
-#           new_x.f = f_u
-#     pop = new_pop
-#   g += 1
-
-
 class Tsp:
     def __init__(self, number_of_nodes, min, max, population_size) -> None:
         self.number_of_nodes = number_of_nodes
