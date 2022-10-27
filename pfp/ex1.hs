@@ -8,8 +8,11 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+import Control.Exception (handle)
 import Data.Char (isLower, ord, toLower, toUpper)
 import Distribution.Compat.Semigroup (Last' (getLast'))
+import GHC.IO.IOMode (IOMode (ReadMode))
+import System.IO (hClose, hGetContents, hGetLine, openFile)
 
 plus x y = x + y
 
@@ -130,7 +133,7 @@ data Expr
   | Sub Expr Expr
   | Mul Expr Expr
   | Div Expr Expr
-  |  Var Char
+  | Var Char
   deriving (Eq)
 
 instance Show Expr where
@@ -159,3 +162,47 @@ deriv (Var a) x
   | otherwise = Num 0
 deriv (Add a b) x = Add (deriv a x) (deriv b x)
 deriv (Mul a b) x = Mul (deriv a x) (deriv a x)
+
+data Tree a
+  = Leaf a
+  | Branch a (Tree a) (Tree a)
+  deriving (Show)
+
+tree1 :: Tree Int
+tree1 = Branch 1 (Branch 5 (Leaf 2) (Leaf 3)) (Leaf 4)
+
+sum' :: Tree Int -> Int
+sum' (Branch val left right) = val + sum' left + sum' right
+sum' (Leaf val) = val
+
+toList :: Tree a -> [a]
+toList (Leaf x) = [x]
+toList (Branch x lt rt) = toList lt ++ [x] ++ toList rt
+
+toString :: Show a => Tree a -> String
+toString (Leaf x) = show x
+toString (Branch x lt rt) = show x ++ "(" ++ toString lt ++ "," ++ toString rt ++ ")"
+
+-- fromString :: Read a => String -> Tree a
+
+-- fromString input = fst (fromString' input)
+
+-- fromString' :: Read a => String -> (Tree a, String)
+-- fromString' input =
+--   let value = takeWhile (\x -> x \= '(' && x \= ')' && x \= ',') input
+--       rest = dropWhile (\x -> x \= '(' && x \= ')' && x \= ',') input
+--       value' = read value
+--    in if null rest || head rest == ',' || head rest == ')'
+--         then (Leaf value', rest)
+--         else
+--           let (lt, rest') = fromString' $tail rest
+--               (rt, rest'') = fromString' $ tail rest'
+--            in (Branch value' lt rt, tail rest'')
+
+main = do
+  handle <- openFile "ex1.hs" ReadMode
+  content <- hGetContents handle
+  let res = concat [show idx ++ ". " ++ line ++ "\n" | (idx, line) <- zip [1 ..] (lines content)]
+  putStr res
+  writeFile "out.txt" res
+  hClose handle
