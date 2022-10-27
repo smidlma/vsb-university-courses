@@ -66,7 +66,7 @@ void read_tsp_file(const char *fname)
 		std::getline(file, line);
 		std::getline(file, line);
 		std::getline(file, line);
-		const int N = 11;
+		const int N = 13;
 		int j = 0;
 		while (std::getline(file, line) && j < N)
 		{
@@ -158,13 +158,16 @@ void read_tsp_file(const char *fname)
 #endif
 		end_timer();
 		print_elapsed_time();
-
+#ifdef PARALER
 		std::cout
 			<< "1 ";
+#endif
 		for (auto id : min_vector)
 		{
 			std::cout << id << " ";
 		}
+		std::cout
+			<< "1 ";
 		std::cout << "distance => " << min_travel_dist << std::endl;
 
 		file.close();

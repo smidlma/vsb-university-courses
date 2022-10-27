@@ -8,9 +8,9 @@
 #include <chrono>
 #include <queue>
 #include <list>
-// #include <omp.h>
+#include <omp.h>
 
-#define NUMBER_OF_CITIES 22
+#define NUMBER_OF_CITIES 13
 
 struct tsp
 {
@@ -270,6 +270,7 @@ void run_tsp(tsp tsp_holder)
 
     while (!nodes_to_explore.empty())
     {
+#pragma omp parallel for
         for (int i = 0; i < nodes_to_explore.size(); i++)
         {
             std::vector<double> local_matrix = current_node.reduction_matrix;
@@ -289,6 +290,7 @@ void run_tsp(tsp tsp_holder)
             nodes_to_explore[i].reduction_matrix = tmp.matrix;
             nodes_to_explore[i].cost = current_node.cost + tmp.cost + root_node.reduction_matrix[nodes_to_explore[i].idx + current_node.idx * size];
         }
+
         // find min cost of level
         Node min_node = find_min_node(nodes_to_explore);
 
