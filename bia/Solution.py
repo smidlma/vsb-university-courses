@@ -209,6 +209,71 @@ class Solution:
             G_curr = G_curr + 1
         self.show(points)
 
+    def particle_swarm(self):
+        def update_velocity(particle, velocity, pbest, gbest, itteration):
+            new_velocity = np.array([0.0 for i in range(self.dimension)])
+            r1 = np.random.uniform(0, 1)
+            r2 = np.random.uniform(0, 1)
+            for i in range(self.dimension):
+                new_velocity[i] = (
+                    inertia_weight(itteration) * velocity[i]
+                    + c1 * r1 * (pbest[i] - particle[i])
+                    + c2 * r2 * (gbest[i] - particle[i])
+                )
+            return new_velocity
+
+        def calculate_pos(x, veloctity):
+            new_pos = []
+            for i in range(self.dimension):
+                new_pos.append(x[i] + veloctity[i])
+            tmp = self.check_boundaries(new_pos)
+            tmp.append(self.function(tmp))
+            return tmp
+
+        def inertia_weight(i):
+            return w_s - ((w_s - w_e) * i / M_max)
+
+        v_min = self.upper_bound / 50
+        v_max = self.upper_bound / 20
+        pop_size = 15
+        c1 = 0.5
+        c2 = 0.5
+        M_max = 50
+        w_s = 0.9
+        w_e = 0.4
+        m = 0
+        points = []
+
+        swarm = [self.generate_random() for idx in range(pop_size)]
+        gBest = min(swarm, key=lambda point: point[2])
+        pBest = swarm
+        velocity_vectors = [
+            update_velocity(x, [v_min, v_min], pBest[idx], gBest, 0)
+            for idx, x in enumerate(swarm)
+        ]
+
+        points.append(swarm)
+
+        while m < M_max:
+            tmp = swarm.copy()
+            for idx, x in enumerate(tmp):
+                v_tmp = update_velocity(
+                    x, velocity_vectors[idx], pBest[idx], gBest, idx
+                )
+                velocity_vectors[idx] = v_tmp
+                new_x = calculate_pos(x, v_tmp)
+                tmp[idx] = new_x
+                if tmp[idx][2] < pBest[idx][2]:
+                    pBest[idx] = new_x
+                if pBest[idx][2] < gBest[2]:
+                    gBest = new_x
+
+            points.append(tmp)
+            swarm = tmp
+            m = m + 1
+
+        self.show(points)
+
 
 class Tsp:
     def __init__(self, number_of_nodes, min, max, population_size) -> None:

@@ -21,7 +21,7 @@ def main():
     for name in VALID_FUNCTION_NAMES:
         f = functions.get(name)
         solution = Solution(2, f)
-        solution.differential_evolution()
+        solution.particle_swarm()
         plt.show()
 
     # TSP visualization
