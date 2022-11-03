@@ -206,3 +206,5 @@ main = do
   putStr res
   writeFile "out.txt" res
   hClose handle
+
+-- PI = inside/all * 4
