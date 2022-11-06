@@ -274,6 +274,56 @@ class Solution:
 
         self.show(points)
 
+    def soma(self):
+        def get_prt_vector():
+            return [
+                1 if np.random.uniform() < PRT else 0 for idx in range(self.dimension)
+            ]
+
+        POP_SIZE = 20  # 20
+        PRT = 0.4
+        PATH_LEN = 3.0
+        STEP = 0.11
+        M_MAX = 50
+        migrations = 0
+
+        points = []
+
+        population = [self.generate_random() for i in range(POP_SIZE)]
+        leader_idx = population.index(
+            min(population, key=lambda point: point[self.dimension])
+        )
+
+        points.append(population)
+        # print(population)
+        while migrations < M_MAX:
+            tmp_pop = population.copy()
+            for idx in range(len(tmp_pop)):
+                if idx != leader_idx:
+                    prt_vec = get_prt_vector()
+                    start = tmp_pop[idx]
+                    t = 0
+                    while t <= PATH_LEN:
+                        tmp_local = [
+                            start[j]
+                            + (tmp_pop[leader_idx][j] - start[j]) * t * prt_vec[j]
+                            for j in range(self.dimension)
+                        ]
+                        tmp_local = self.check_boundaries(tmp_local)
+                        tmp_local.append(self.function(tmp_local))
+                        if tmp_local[self.dimension] < tmp_pop[idx][self.dimension]:
+                            tmp_pop[idx] = tmp_local
+                        t = t + STEP
+
+            leader_idx = tmp_pop.index(
+                min(tmp_pop, key=lambda point: point[self.dimension])
+            )
+            points.append(tmp_pop)
+            population = tmp_pop
+            migrations = migrations + 1
+
+        self.show(points)
+
 
 class Tsp:
     def __init__(self, number_of_nodes, min, max, population_size) -> None:

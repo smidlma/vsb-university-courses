@@ -21,7 +21,7 @@ def main():
     for name in VALID_FUNCTION_NAMES:
         f = functions.get(name)
         solution = Solution(2, f)
-        solution.particle_swarm()
+        solution.soma()
         plt.show()
 
     # TSP visualization
