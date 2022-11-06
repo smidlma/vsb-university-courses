@@ -45,8 +45,8 @@ ggplot(data, # uprav
                width = 0.15)+
   geom_boxplot()+
   labs(x = "", y = "Pokles světelného toku (lm)")+ # uprav
-  theme_classic()+
-  theme(axis.text = element_text(color = "black", size = 11))
+  theme_classic(base_size = 16)+
+  theme(axis.text = element_text(color = "black", size = 16))
 
 
 outliers = 
@@ -70,8 +70,8 @@ ggplot(data, # uprav
                width = 0.15)+
   geom_boxplot()+
   labs(x = "", y = "Pokles světelného toku (lm)")+ # uprav
-  theme_classic()+
-  theme(axis.text = element_text(color = "black", size = 11))
+  theme_classic(base_size = 16)+
+  theme(axis.text = element_text(color = "black", size = 16))
 
 
 moje_tab2=
@@ -93,3 +93,31 @@ moje_tab2=
             horni_mez_hradeb = Q3+1.5*(Q3-Q1))
 
 t(moje_tab2) # Vše je potřeba zaokrouhlit dle norem!
+
+
+# 6. Sada QQ-grafů (kvant. proměnná tříděná dle kategoriální) ####
+
+ggplot(data, # uprav
+       aes(sample = pokles_out))+ # uprav
+  stat_qq()+
+  stat_qq_line()+
+  labs(x = "Teoretické normované kvantily", y = "Výběrové kvantily")+
+  theme_classic(base_size = 16)+
+  theme(axis.text = element_text(color = "black", size = 16))+
+  facet_wrap("manufacturer", # uprav
+             ncol = 3, # uprav
+             scales = "free")
+
+# 4. Sada histogramů (kvant. proměnná tříděná dle kategoriální) ####
+
+ggplot(data, # uprav
+       aes(x = pokles_out))+ # uprav
+  geom_histogram(binwidth = 0.8, # uprav
+                 color = "black",
+                 fill = "grey55")+
+  labs(x = "Pokles světelného toku (lm)", # uprav
+       y = "Četnost")+ 
+  theme_classic(base_size = 16)+
+  theme(axis.text = element_text(color = "black", size = 16))+
+  facet_wrap("manufacturer",  # uprav
+             dir = "v")
