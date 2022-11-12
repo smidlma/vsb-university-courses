@@ -121,3 +121,13 @@ ggplot(data, # uprav
   theme(axis.text = element_text(color = "black", size = 16))+
   facet_wrap("manufacturer",  # uprav
              dir = "v")
+
+options(OutDec = ",")
+
+0.609375 - 2 * 2.932669
+0.609375 + 2 * 2.932669
+
+1.255556 - 2 * 3.862091
+1.255556 + 2 * 3.862091
+
+348.6 - 2 *10.3

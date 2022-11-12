@@ -295,7 +295,6 @@ class Solution:
         )
 
         points.append(population)
-        # print(population)
         while migrations < M_MAX:
             tmp_pop = population.copy()
             for idx in range(len(tmp_pop)):
@@ -321,6 +320,64 @@ class Solution:
             points.append(tmp_pop)
             population = tmp_pop
             migrations = migrations + 1
+
+        self.show(points)
+
+    def firefly(self):
+        def distance(f1, f2):
+            return np.sqrt((f2[0] - f1[0]) ** 2 + (f2[1] - f1[1]) ** 2)
+
+        def light_intensity(i_orig, r):
+            return i_orig * np.e ** (-GAMA * r)
+
+        def attractivness(r):
+            return BETA_0 / (1 + r)
+
+        def update_position(f1, f2):
+            new_pos = []
+            for idx in range(self.dimension):
+                new_pos.append(
+                    f1[idx]
+                    + attractivness(distance(f1, f2)) * (f2[idx] - f1[idx])
+                    + ALPHA * np.random.normal()
+                )
+            new_pos = self.check_boundaries(new_pos)
+            new_pos.append(self.function(new_pos))
+            return new_pos
+
+        ALPHA = 0.3
+        BETA_0 = 1
+        GAMA = 1
+        MAX_GENERATION = 50
+        POPULATION_SIZE = 25
+        population = [self.generate_random() for i in range(POPULATION_SIZE)]
+        best_firefly_idx = population.index(
+            min(population, key=lambda point: point[self.dimension])
+        )
+        t = 0
+        points = []
+
+        while t < MAX_GENERATION:
+            tmp_pop = population.copy()
+            for i in range(POPULATION_SIZE):
+                if i == best_firefly_idx:
+                    tmp_best = self.generate_random()
+                    if tmp_pop[best_firefly_idx][2] > tmp_best[2]:
+                        tmp_pop[best_firefly_idx] = tmp_best
+                else:
+                    for j in range(POPULATION_SIZE):
+                        r = distance(tmp_pop[i], tmp_pop[j])
+                        if light_intensity(tmp_pop[j][2], r) < light_intensity(
+                            tmp_pop[i][2], r
+                        ):
+                            tmp_pop[i] = update_position(tmp_pop[i], tmp_pop[j])
+
+                best_firefly_idx = tmp_pop.index(
+                    min(tmp_pop, key=lambda point: point[self.dimension])
+                )
+            population = tmp_pop
+            points.append(tmp_pop)
+            t = t + 1
 
         self.show(points)
 
