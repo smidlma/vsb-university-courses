@@ -478,6 +478,83 @@ class Tsp:
 
         self.show(paths)
 
+    def aco(self):
+        def visit(x, col):
+            x[col] = 0
+            return x
+
+        ALPHA = 1
+        BETA = 2
+        MAX_MIGRATIONS = 200
+        cities = [
+            {
+                "id": idx,
+                "x": np.random.randint(self.min, self.max),
+                "y": np.random.randint(self.min, self.max),
+            }
+            for idx in range(self.number_of_nodes)
+        ]
+        ants = cities.copy()
+
+        distance_matrix = [
+            [self.calc_distance(cities[i], cities[j]) for j in range(len(cities))]
+            for i in range(len(cities))
+        ]
+        # distance_matrix = [
+        #     [0, 10, 12, 11, 14],
+        #     [10, 0, 13, 15, 8],
+        #     [12, 13, 0, 9, 14],
+        #     [11, 15, 9, 0, 16],
+        #     [14, 8, 14, 16, 0],
+        # ]
+        inverse_matrix = np.linalg.inv(distance_matrix)
+        initial_pheromone_matrix = [
+            [1 for j in range(len(cities))] for i in range(len(cities))
+        ]
+        m = 0
+        while m < MAX_MIGRATIONS:
+            # for every ant
+            for i in range(len(ants)):
+                visibility_matrix = inverse_matrix.copy()
+                path = [ants[i]["id"]]  # path starting at each node
+                for j in range(len(cities)):
+                    curr_town_idx = path[-1]
+                    probabilities = []
+                    for k in range(len(cities)):
+                        neighborhood_node_idx = cities[k]["id"]
+                        if neighborhood_node_idx not in path:
+                            p = (
+                                initial_pheromone_matrix[curr_town_idx][
+                                    neighborhood_node_idx
+                                ]
+                                ** ALPHA
+                                * visibility_matrix[curr_town_idx][
+                                    neighborhood_node_idx
+                                ]
+                                ** BETA
+                            )
+                            probabilities.append({"id": neighborhood_node_idx, "p": p})
+                    prob_sum = sum(x["p"] for x in probabilities)
+                    # , x["p"] / prob_sum, probabilities}
+                    probabilities = list(
+                        map(
+                            lambda x: {"id": x["id"], "p": x["p"] / prob_sum},
+                            probabilities,
+                        )
+                    )
+                    # print(probabilities)
+                    random_value = np.random.uniform()
+                    for probability_index, probability in enumerate(probabilities):
+                        tmp_s = sum(
+                            probabilities[x]["p"] for x in range(probability_index)
+                        )
+                        if random_value < probability["p"] + tmp_s:
+                            path.append(probability["id"])
+                path.append(ants[i]["id"])  # back to starting city
+                print(path)
+            exit(0)
+            m = m + 1
+
     def show(self, paths):
         x = list(map(lambda towns: list(map(lambda town: town["x"], towns)), paths))
         y = list(map(lambda towns: list(map(lambda town: town["y"], towns)), paths))
