@@ -25,7 +25,7 @@ def main():
     #     plt.show()
 
     # TSP visualization
-    s = Tsp(5, 0, 350, 350)
+    s = Tsp(12, 0, 350, 350)
     s.aco()
 
 

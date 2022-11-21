@@ -474,17 +474,22 @@ class Tsp:
             best_pop.append(start_city)
             # print(best_pop)
             # exit()
-            paths.append(best_pop)
 
+            paths.append(best_pop)
+        print(paths)
         self.show(paths)
 
     def aco(self):
-        def visit(x, col):
-            x[col] = 0
-            return x
+        def eval_path(path):
+            total_distance = 0
+            for i in range(len(path) - 1):
+                total_distance = total_distance + distance_matrix[path[i]][path[i + 1]]
+            return total_distance
 
         ALPHA = 1
         BETA = 2
+        RHO = 0.5
+        Q = 1
         MAX_MIGRATIONS = 200
         cities = [
             {
@@ -500,19 +505,16 @@ class Tsp:
             [self.calc_distance(cities[i], cities[j]) for j in range(len(cities))]
             for i in range(len(cities))
         ]
-        # distance_matrix = [
-        #     [0, 10, 12, 11, 14],
-        #     [10, 0, 13, 15, 8],
-        #     [12, 13, 0, 9, 14],
-        #     [11, 15, 9, 0, 16],
-        #     [14, 8, 14, 16, 0],
-        # ]
+
         inverse_matrix = np.linalg.inv(distance_matrix)
         initial_pheromone_matrix = [
             [1 for j in range(len(cities))] for i in range(len(cities))
         ]
         m = 0
+        best_path = {"path": None, "cost": None}
+        visualization_path = []
         while m < MAX_MIGRATIONS:
+            paths = []
             # for every ant
             for i in range(len(ants)):
                 visibility_matrix = inverse_matrix.copy()
@@ -535,14 +537,12 @@ class Tsp:
                             )
                             probabilities.append({"id": neighborhood_node_idx, "p": p})
                     prob_sum = sum(x["p"] for x in probabilities)
-                    # , x["p"] / prob_sum, probabilities}
                     probabilities = list(
                         map(
                             lambda x: {"id": x["id"], "p": x["p"] / prob_sum},
                             probabilities,
                         )
                     )
-                    # print(probabilities)
                     random_value = np.random.uniform()
                     for probability_index, probability in enumerate(probabilities):
                         tmp_s = sum(
@@ -551,9 +551,32 @@ class Tsp:
                         if random_value < probability["p"] + tmp_s:
                             path.append(probability["id"])
                 path.append(ants[i]["id"])  # back to starting city
-                print(path)
-            exit(0)
+                paths.append(path)
+            # print(paths)
+            # do vaporization by coeficient
+            initial_pheromone_matrix = list(
+                map(lambda x: list(map(lambda y: y * RHO, x)), initial_pheromone_matrix)
+            )
+            # do vaporization by path const
+            for i in range(len(paths)):
+                path_eval = eval_path(paths[i])
+                # just check for best path
+                # print(paths[i])
+                if best_path["path"] is None or path_eval < best_path["cost"]:
+                    best_path["path"] = paths[i]
+                    best_path["cost"] = path_eval
+
+                for j in range(len(paths[0]) - 1):
+                    initial_pheromone_matrix[paths[i][j]][paths[i][j + 1]] = (
+                        initial_pheromone_matrix[paths[i][j]][paths[i][j + 1]]
+                        + Q / path_eval
+                    )
+            visualization_path.append(list(map(lambda x: cities[x], best_path["path"])))
+            # print(visualization_path)
+            # exit(0)
             m = m + 1
+        print(best_path)
+        self.show(visualization_path)
 
     def show(self, paths):
         x = list(map(lambda towns: list(map(lambda town: town["x"], towns)), paths))
