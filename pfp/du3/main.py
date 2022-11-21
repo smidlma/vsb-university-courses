@@ -25,19 +25,25 @@ class Node:
 class ImmutableArray:
     def __init__(self, size) -> None:
         self.size = size
-        self.tree = (None, None, None)
+        self.tree = None
+        self.height = (size - (size % 3)) / 3 + size % 3
+        print(self.height)
+        self.init(size)
 
     def __iter__(self):
-        self.a = 1
+        self.iter_index = 0
         return self
 
     def __next__(self):
-        if self.a <= 20:
-            x = self.a
-            self.a += 1
+        if self.iter_index < self.size:
+            x = self.get_value(self.iter_index)
+            self.iter_index = self.iter_index + 1
             return x
         else:
             raise StopIteration
+
+    def init(self):
+        pass
 
     def set_value(self):
         pass
@@ -45,3 +51,11 @@ class ImmutableArray:
     def get_value(self, index):
         if index < 0 or index >= self.size:
             raise IndexError
+
+
+def main():
+    arr = ImmutableArray(9)
+
+
+if __name__ == "__main__":
+    main()

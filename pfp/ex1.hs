@@ -9,6 +9,9 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 import Control.Exception (handle)
+import Control.Monad
+import Data.Array
+import Data.Array.ST
 import Data.Char (isLower, ord, toLower, toUpper)
 import Distribution.Compat.Semigroup (Last' (getLast'))
 import GHC.IO.IOMode (IOMode (ReadMode))
@@ -208,3 +211,32 @@ main = do
   hClose handle
 
 -- PI = inside/all * 4
+
+type SimpleState s a = s -> (s, a)
+
+type ListInput a = SimpleState [Int] a
+
+readInt :: ListInput Int
+readInt stateList = (tail stateList, head stateList)
+
+myBind :: (s -> (s, a)) -> (a -> (s -> (s, b))) -> s -> (s, b)
+myBind ma action s =
+  let (s', a) = ma s
+   in (action a) s'
+
+bubbleSort :: Array Int Int -> Array Int Int
+bubbleSort myArray = runSTArray $ do
+  stArray <- thaw myArray
+  let end = (snd . bounds) myArray
+  forM_ [1 .. end] $ \i -> do
+    forM_ [0 .. (end - i)] $ \j -> do
+      val <- readArray stArray j
+      nextVal <- readArray stArray (j + 1)
+      let outOfOrder = val > nextVal
+      when outOfOrder $ do
+        writeArray stArray j nextVal
+        writeArray stArray (j + 1) val
+  return stArray
+
+-- quickSort :: Array Int Int -> Array Int Int
+-- elems $ quickSort $  listArray (0,5) [8,4,9,6,7,1]
