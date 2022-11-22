@@ -48,6 +48,10 @@ type UsersAPI =
 -- ":<|>" => Its just a pattern matching for different routes
 -- ":>"   => We can imagine it as "/" in the url
 
+-- Define handlers for the UsersAPI
+-- Its just a functions with Handler Monad
+-- If you want to interact with IO u need to use liftIO
+-- Handlers have to be specified in the same order as in the API type.
 usersServer :: Server UsersAPI
 usersServer = findAllHandler :<|> findByIdHandler :<|> createHandler :<|> updateByIdHandler :<|> deleteByIdHandler
   where
@@ -73,6 +77,7 @@ usersServer = findAllHandler :<|> findByIdHandler :<|> createHandler :<|> update
           return u
         else throwError err404
 
+-- Just sample users mock
 users :: [User]
 users =
   [ User 1 "Isaac Newton" 372 "isaac@newton.co.uk",
@@ -90,8 +95,10 @@ instance ToJSON Cart
 
 instance FromJSON Cart
 
+-- If you create another API module
 type CartsAPI = "carts" :> Get '[JSON] [Cart]
 
+-- You can easily connect multiple APIs modules in one API type
 type API = UsersAPI :<|> CartsAPI
 
 userApi :: Proxy UsersAPI
