@@ -5,6 +5,7 @@ library(ggplot2)
 library(ggpubr)
 library(moments)
 library(rstatix)
+library(lawstat)
 
 # Import dat
 data = read_excel("data_du1.xlsx")  # Uprav soubor, příp. cestu k souboru
@@ -131,3 +132,40 @@ options(OutDec = ",")
 1.255556 + 2 * 3.862091
 
 348.6 - 2 *10.3
+
+
+data %>% 
+  group_by(manufacturer) %>% 
+  summarise(rozsah = length(na.omit(pokles_out)),
+            sikmost = moments::skewness(pokles_out, na.rm = T),
+            spicatost = moments::kurtosis(pokles_out, na.rm = T)-3, 
+            rozptyl = var(pokles_out, na.rm = T),
+            sm_odch = sd(pokles_out, na.rm = T),
+            prumer = mean(pokles_out, na.rm = T),
+            median = quantile(pokles_out, 0.5, na.rm = T),
+            Shapiruv_Wilkuv_phodnota = shapiro.test(pokles_out)$p.value,
+            Symetrie_phodnota = symmetry.test(pokles_out, boot = FALSE)$p.value,
+            )
+
+data1 = data %>% 
+  filter(manufacturer == "Amber")
+
+
+data2 = data %>% 
+  filter(manufacturer == "Bright")
+#symmetry.test(data1$pokles_out, boot = FALSE)
+
+#Amber test
+#wilcox.test(data1$pokles_out, mu = 0.4, alternative = "two.sided", conf.level = 0.95, conf.int = TRUE)
+#Bright test
+#wilcox.test(data2$pokles_out, mu = 0.8, alternative = "two.sided", conf.level = 0.95, conf.int = TRUE)
+
+tapply(data$pokles_out, data$manufacturer, wilcox.test, mu = 0, alternative = "greater", conf.level = 0.95, conf.int = T)
+
+quantile(data2$pokles_out, 0.5, na.rm = T) - quantile(data1$pokles_out, 0.5, na.rm = T)
+
+wilcox.test(data$pokles_out[data$manufacturer=="Bright"], 
+            data$pokles_out[data$manufacturer=="Amber"], 
+            alternative = "greater", 
+            conf.level = 0.95,
+            conf.int = T)
