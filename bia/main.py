@@ -18,15 +18,15 @@ def main():
     }
 
     # Solution visualization
-    # for name in VALID_FUNCTION_NAMES:
-    #     f = functions.get(name)
-    #     solution = Solution(2, f)
-    #     solution.firefly()
-    #     plt.show()
+    for name in VALID_FUNCTION_NAMES:
+        f = functions.get(name)
+        solution = Solution(2, f)
+        solution.firefly()
+        plt.show()
 
     # TSP visualization
-    s = Tsp(12, 0, 350, 350)
-    s.aco()
+    # s = Tsp(20, 0, 350, 350)
+    # s.aco()
 
 
 if __name__ == "__main__":

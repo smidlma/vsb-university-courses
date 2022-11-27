@@ -490,7 +490,7 @@ class Tsp:
         BETA = 2
         RHO = 0.5
         Q = 1
-        MAX_MIGRATIONS = 200
+        MAX_MIGRATIONS = 500
         cities = [
             {
                 "id": idx,
