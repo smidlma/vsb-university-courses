@@ -21,6 +21,7 @@ class Function:
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.id = VALID_FUNCTION_NAMES.index(name)
+        self.FUNCTION_CALLS = 0
 
     def sphere(self, params=[]) -> float:
         sum = 0
@@ -46,14 +47,17 @@ class Function:
         return 418.9829 * dimension - sum
 
     def rosenbrock(self, params=[]):
-        return 100 * (params[1] - params[0] ** 2) ** 2 + (params[0] - 1) ** 2
+        x = np.array(params)
+        x0 = x[:-1]
+        x1 = x[1:]
+        return sum((1 - x0) ** 2) + 100 * sum((x1 - x0**2) ** 2)
 
     def rastrigin(self, params=[]):
-        dimension = len(params)
-        return 10 * dimension + (
-            (params[0] ** 2 - 10 * np.cos(2 * np.pi * params[0]))
-            + (params[1] ** 2 - 10 * np.cos(2 * np.pi * params[1]))
-        )
+        fitness_value = 0.0
+        for i in range(len(params)):
+            xi = params[i]
+            fitness_value += (xi * xi) - (10 * np.cos(2 * np.pi * xi)) + 10
+        return fitness_value
 
     def griewank(self, params=[]):
         sum1, sum2 = 0.0, 0.0
@@ -77,35 +81,23 @@ class Function:
         return sum
 
     def michalewicz(self, params=[]):
-        return -1 * (
-            (np.sin(params[0]) * np.sin((1 * params[0] ** 2) / np.pi) ** 20)
-            + (np.sin(params[1]) * np.sin((2 * params[1] ** 2) / np.pi) ** 20)
-        )
+        tmp = 0
+        for i in range(len(params)):
+            tmp += np.sin(params[i]) * np.sin((i + 1 * params[i] ** 2) / np.pi) ** 20
+        return -1 * tmp
 
     def ackley(self, params=[]) -> float:
-        return (
-            -20.0 * np.exp(-0.2 * np.sqrt(0.5 * (params[0] ** 2 + params[1] ** 2)))
-            - np.exp(
-                0.5 * (np.cos(2 * np.pi * params[0]) + np.cos(2 * np.pi * params[1]))
-            )
-            + np.e
-            + 20
-        )
-        # a = 20
-        # b = 0.2
-        # c = 2 * np.pi
-        # d = 2
-        # sum_pow = 0
-        # sum_cos = 0
-        # for item in params:
-        #     sum_pow += item**2
-        #     sum_cos += np.cos(c * item)
-        # return (
-        #     -a * np.exp(-b * np.sqrt(1 / d * sum_pow))
-        #     - np.exp(1 / d * (sum_cos))
-        #     + a
-        #     + np.e
-        # )
+        a = 20
+        b = 0.2
+        c = 2 * np.pi
+        x = np.array(params)  # ValueError if any NaN or Inf
+        n = len(x)
+        s1 = sum(x**2)
+        s2 = sum(np.cos(c * x))
+        return -a * np.exp(-b * np.sqrt(s1 / n)) - np.exp(s2 / n) + a + np.exp(1)
 
     def __call__(self, params=[]) -> float:
+        if self.FUNCTION_CALLS >= 3000:
+            raise Exception
+        self.FUNCTION_CALLS += 1
         return getattr(self, self.name)(params)

@@ -73,7 +73,7 @@ class Solution:
         if not low:
             low = self.lower_bound
         result = np.random.uniform(low=low, high=high, size=self.dimension).tolist()
-        result.append(self.function([result[0], result[1]]))
+        result.append(self.function(result))
         return result
 
     def blind_search(self):
@@ -157,57 +157,58 @@ class Solution:
         self.show(points)
 
     def check_boundaries(self, v):
-        if v[0] > self.upper_bound:
-            v[0] = self.upper_bound
-        if v[0] < self.lower_bound:
-            v[0] = self.lower_bound
-
-        if v[1] > self.upper_bound:
-            v[1] = self.upper_bound
-        if v[1] < self.lower_bound:
-            v[1] = self.lower_bound
+        for i in range(self.dimension):
+            if v[i] > self.upper_bound:
+                v[i] = self.upper_bound
+            if v[i] < self.lower_bound:
+                v[i] = self.lower_bound
         return v
 
     def differential_evolution(self):
-        NP = 20
+        NP = 30
         F = 0.5
         CR = 0.5
         G_max = 50
         G_curr = 0
         points = []
+        best_idx = 0
 
         population = [self.generate_random() for idx in range(NP)]
         points.append(population)
+        try:
+            while G_curr < G_max:
+                new_popopulation = deepcopy(population)
+                for i, x in enumerate(population):
+                    r1_pop = list(filter(lambda p: p != x, population))
+                    r1 = r1_pop[np.random.randint(0, len(r1_pop) - 1)]
+                    r2_pop = list(filter(lambda p: p != x and p != r1, population))
+                    r2 = r2_pop[np.random.randint(0, len(r2_pop) - 1)]
+                    r3_pop = list(
+                        filter(lambda p: p != x and p != r1 and p != r2, population)
+                    )
+                    r3 = r3_pop[np.random.randint(0, len(r3_pop) - 1)]
+                    v = (np.array(r1) - np.array(r2)) * F + np.array(r3)
+                    # v = [(r1[0] - r2[0]) * F + r3[0], (r1[1] - r2[1]) * F + r3[1]]
+                    v = self.check_boundaries(v)
+                    u = np.zeros(self.dimension)
+                    j_rnd = np.random.randint(0, self.dimension)
 
-        while G_curr < G_max:
-            new_popopulation = deepcopy(population)
-            for i, x in enumerate(population):
-                r1_pop = list(filter(lambda p: p != x, population))
-                r1 = r1_pop[np.random.randint(0, len(r1_pop) - 1)]
-                r2_pop = list(filter(lambda p: p != x and p != r1, population))
-                r2 = r2_pop[np.random.randint(0, len(r2_pop) - 1)]
-                r3_pop = list(
-                    filter(lambda p: p != x and p != r1 and p != r2, population)
-                )
-                r3 = r3_pop[np.random.randint(0, len(r3_pop) - 1)]
-
-                v = [(r1[0] - r2[0]) * F + r3[0], (r1[1] - r2[1]) * F + r3[1]]
-                v = self.check_boundaries(v)
-                u = np.zeros(self.dimension)
-                j_rnd = np.random.randint(0, self.dimension)
-
-                for j in range(self.dimension):
-                    if np.random.uniform() < CR or j == j_rnd:
-                        u[j] = v[j]
-                    else:
-                        u[j] = x[j]
-                f_u = self.function([u[0], u[1]])
-                if f_u <= x[2]:
-                    new_popopulation[i] = [u[0], u[1], f_u]
-            population = new_popopulation
-            points.append(new_popopulation)
-            G_curr = G_curr + 1
-        self.show(points)
+                    for j in range(self.dimension):
+                        if np.random.uniform() < CR or j == j_rnd:
+                            u[j] = v[j]
+                        else:
+                            u[j] = x[j]
+                    f_u = self.function(u)
+                    if f_u <= x[self.dimension]:
+                        new_popopulation[i] = [*u, f_u]
+                        best_idx = i
+                population = new_popopulation
+                points.append(new_popopulation)
+                G_curr = G_curr + 1
+            return population[best_idx]
+        except:
+            return population[best_idx]
+        # self.show(points)
 
     def particle_swarm(self):
         def update_velocity(particle, velocity, pbest, gbest, itteration):
@@ -235,7 +236,7 @@ class Solution:
 
         v_min = self.upper_bound / 50
         v_max = self.upper_bound / 20
-        pop_size = 15
+        pop_size = 30
         c1 = 0.5
         c2 = 0.5
         M_max = 50
@@ -245,34 +246,39 @@ class Solution:
         points = []
 
         swarm = [self.generate_random() for idx in range(pop_size)]
-        gBest = min(swarm, key=lambda point: point[2])
+        gBest = min(swarm, key=lambda point: point[self.dimension])
         pBest = swarm
         velocity_vectors = [
-            update_velocity(x, [v_min, v_min], pBest[idx], gBest, 0)
+            update_velocity(
+                x, [v_min for i in range(self.dimension)], pBest[idx], gBest, 0
+            )
             for idx, x in enumerate(swarm)
         ]
-
+        best_index = 0
         points.append(swarm)
+        try:
+            while m < M_max:
+                tmp = swarm.copy()
+                for idx, x in enumerate(tmp):
+                    v_tmp = update_velocity(
+                        x, velocity_vectors[idx], pBest[idx], gBest, idx
+                    )
+                    velocity_vectors[idx] = v_tmp
+                    new_x = calculate_pos(x, v_tmp)
+                    tmp[idx] = new_x
+                    if tmp[idx][self.dimension] < pBest[idx][self.dimension]:
+                        pBest[idx] = new_x
+                    if pBest[idx][self.dimension] < gBest[self.dimension]:
+                        gBest = new_x
+                        best_index = idx
 
-        while m < M_max:
-            tmp = swarm.copy()
-            for idx, x in enumerate(tmp):
-                v_tmp = update_velocity(
-                    x, velocity_vectors[idx], pBest[idx], gBest, idx
-                )
-                velocity_vectors[idx] = v_tmp
-                new_x = calculate_pos(x, v_tmp)
-                tmp[idx] = new_x
-                if tmp[idx][2] < pBest[idx][2]:
-                    pBest[idx] = new_x
-                if pBest[idx][2] < gBest[2]:
-                    gBest = new_x
-
-            points.append(tmp)
-            swarm = tmp
-            m = m + 1
-
-        self.show(points)
+                points.append(tmp)
+                swarm = tmp
+                m = m + 1
+            return swarm[best_index]
+        except:
+            return swarm[best_index]
+        # self.show(points)
 
     def soma(self):
         def get_prt_vector():
@@ -280,7 +286,7 @@ class Solution:
                 1 if np.random.uniform() < PRT else 0 for idx in range(self.dimension)
             ]
 
-        POP_SIZE = 20  # 20
+        POP_SIZE = 30
         PRT = 0.4
         PATH_LEN = 3.0
         STEP = 0.11
@@ -293,39 +299,41 @@ class Solution:
         leader_idx = population.index(
             min(population, key=lambda point: point[self.dimension])
         )
-
         points.append(population)
-        while migrations < M_MAX:
-            tmp_pop = population.copy()
-            for idx in range(len(tmp_pop)):
-                if idx != leader_idx:
-                    prt_vec = get_prt_vector()
-                    start = tmp_pop[idx]
-                    t = 0
-                    while t <= PATH_LEN:
-                        tmp_local = [
-                            start[j]
-                            + (tmp_pop[leader_idx][j] - start[j]) * t * prt_vec[j]
-                            for j in range(self.dimension)
-                        ]
-                        tmp_local = self.check_boundaries(tmp_local)
-                        tmp_local.append(self.function(tmp_local))
-                        if tmp_local[self.dimension] < tmp_pop[idx][self.dimension]:
-                            tmp_pop[idx] = tmp_local
-                        t = t + STEP
+        try:
+            while migrations < M_MAX:
+                tmp_pop = population.copy()
+                for idx in range(len(tmp_pop)):
+                    if idx != leader_idx:
+                        prt_vec = get_prt_vector()
+                        start = tmp_pop[idx]
+                        t = 0
+                        while t <= PATH_LEN:
+                            tmp_local = [
+                                start[j]
+                                + (tmp_pop[leader_idx][j] - start[j]) * t * prt_vec[j]
+                                for j in range(self.dimension)
+                            ]
+                            tmp_local = self.check_boundaries(tmp_local)
+                            tmp_local.append(self.function(tmp_local))
+                            if tmp_local[self.dimension] < tmp_pop[idx][self.dimension]:
+                                tmp_pop[idx] = tmp_local
+                            t = t + STEP
 
-            leader_idx = tmp_pop.index(
-                min(tmp_pop, key=lambda point: point[self.dimension])
-            )
-            points.append(tmp_pop)
-            population = tmp_pop
-            migrations = migrations + 1
-
-        self.show(points)
+                leader_idx = tmp_pop.index(
+                    min(tmp_pop, key=lambda point: point[self.dimension])
+                )
+                points.append(tmp_pop)
+                population = tmp_pop
+                migrations = migrations + 1
+            return population[leader_idx]
+        except:
+            return population[leader_idx]
+        # self.show(points)
 
     def firefly(self):
         def distance(f1, f2):
-            return np.sqrt((f2[0] - f1[0]) ** 2 + (f2[1] - f1[1]) ** 2)
+            return np.linalg.norm(np.array(f2) - np.array(f1))
 
         def light_intensity(i_orig, r):
             return i_orig * np.e ** (-GAMA * r)
@@ -349,37 +357,87 @@ class Solution:
         BETA_0 = 1
         GAMA = 1
         MAX_GENERATION = 50
-        POPULATION_SIZE = 25
+        POPULATION_SIZE = 30
         population = [self.generate_random() for i in range(POPULATION_SIZE)]
         best_firefly_idx = population.index(
             min(population, key=lambda point: point[self.dimension])
         )
         t = 0
         points = []
-
-        while t < MAX_GENERATION:
-            tmp_pop = population.copy()
-            for i in range(POPULATION_SIZE):
-                if i == best_firefly_idx:
-                    tmp_best = self.generate_random()
-                    if tmp_pop[best_firefly_idx][2] > tmp_best[2]:
-                        tmp_pop[best_firefly_idx] = tmp_best
-                else:
-                    for j in range(POPULATION_SIZE):
-                        r = distance(tmp_pop[i], tmp_pop[j])
-                        if light_intensity(tmp_pop[j][2], r) < light_intensity(
-                            tmp_pop[i][2], r
+        try:
+            while t < MAX_GENERATION:
+                tmp_pop = population.copy()
+                for i in range(POPULATION_SIZE):
+                    if i == best_firefly_idx:
+                        tmp_best = self.generate_random()
+                        if (
+                            tmp_pop[best_firefly_idx][self.dimension]
+                            > tmp_best[self.dimension]
                         ):
-                            tmp_pop[i] = update_position(tmp_pop[i], tmp_pop[j])
+                            tmp_pop[best_firefly_idx] = tmp_best
+                    else:
+                        for j in range(POPULATION_SIZE):
+                            r = distance(tmp_pop[i], tmp_pop[j])
+                            if light_intensity(
+                                tmp_pop[j][self.dimension], r
+                            ) < light_intensity(tmp_pop[i][self.dimension], r):
+                                tmp_pop[i] = update_position(tmp_pop[i], tmp_pop[j])
 
-                best_firefly_idx = tmp_pop.index(
-                    min(tmp_pop, key=lambda point: point[self.dimension])
+                    best_firefly_idx = tmp_pop.index(
+                        min(tmp_pop, key=lambda point: point[self.dimension])
+                    )
+                population = tmp_pop
+                points.append(tmp_pop)
+                t = t + 1
+            return population[best_firefly_idx]
+        except:
+            return population[best_firefly_idx]
+
+        # self.show(points)
+
+    def teaching_learning_base(self):
+        NP = 30
+        MAX_ITER = 50
+        population = [self.generate_random() for i in range(NP)]
+        best_idx = 0
+        points = [population.copy()]
+        try:
+            for max_idx in range(MAX_ITER):
+                for i in range(NP):
+                    # Teaching phase
+                    Xteacher = min(population, key=lambda x: x[self.dimension])
+                    Xmean = [sum(l) / self.dimension for l in zip(*population)]
+                    TF = np.random.randint(1, 3)
+                    r = np.random.uniform()
+                    Xnew = (
+                        np.array(population[i])
+                        + r * np.array(Xteacher)
+                        - (TF * np.array(Xmean))
+                    )
+
+                    Xnew = self.check_boundaries(Xnew[: self.dimension])
+                    fnew = self.function(Xnew)
+                    if fnew < population[i][self.dimension]:
+                        population[i] = [*Xnew, fnew]
+                    # Learning phase
+                    Xpartner = np.array(population[np.random.randint(NP)])
+                    current = np.array(population[i])
+                    if population[i][self.dimension] < Xpartner[self.dimension]:
+                        Xnew = current + r * (current - Xpartner)
+                    else:
+                        Xnew = current - r * (current - Xpartner)
+                    Xnew = self.check_boundaries(Xnew[: self.dimension])
+                    fnew = self.function(Xnew)
+                    if fnew < population[i][self.dimension]:
+                        population[i] = [*Xnew, fnew]
+                best_idx = population.index(
+                    min(population, key=lambda point: point[self.dimension])
                 )
-            population = tmp_pop
-            points.append(tmp_pop)
-            t = t + 1
-
-        self.show(points)
+                points.append(population.copy())
+            # self.show(points)
+            return population[best_idx]
+        except:
+            return population[best_idx]
 
 
 class Tsp:
