@@ -17,6 +17,8 @@ bubbleSort myArray = runSTArray $ do
         writeArray stArray (j + 1) val
   return stArray
 
+-- elems $ quickSort $  listArray (0,5) [8,4,9,6,7,1]
+
 quickSort :: Array Int Int -> Array Int Int
 quickSort myArray = runSTArray $ do
   stArray <- thaw myArray
@@ -55,4 +57,4 @@ swap arr left right = do
 
 foreachWith xs v f = foldlM (flip f) v xs
 
--- elems $ quickSort $  listArray (0,5) [8,4,9,6,7,1]
+-- foldlM (\xs x -> [x] : [xs]) [] [1 .. 3]
