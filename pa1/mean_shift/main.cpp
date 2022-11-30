@@ -44,7 +44,7 @@ void show_features(Node n)
 
 std::vector<Node> read_file(const char *filename)
 {
-    int records_max = 500;
+    int records_max = 100;
     int records_counter = 0;
     std::vector<Node> data;
     std::ifstream file(filename);
@@ -84,8 +84,8 @@ int euclide_distance(Node *p, Node *p_tmp)
 
 double kernel(int dist)
 {
-    double kernel_bandwitch = 5;
-    return std::exp(-dist / (2 * kernel_bandwitch * kernel_bandwitch));
+    double kernel_bandwitch = 2000;
+    return std::exp(-dist / (2 * (kernel_bandwitch * kernel_bandwitch)));
 }
 
 Node shift(Node point, std::vector<Node> original_points)
@@ -140,6 +140,7 @@ void mean_shift(std::vector<Node> nodes)
         }
 
         iter += 1;
+        std::cout << "Iteration rounds: " << iter << std::endl;
         // if all centroids are optimized end the mean shift
         if (optimized)
         {
@@ -147,7 +148,6 @@ void mean_shift(std::vector<Node> nodes)
             break;
         }
     }
-    std::cout << "Iteration rounds: " << iter << std::endl;
 }
 
 int main(int argc, char const *argv[])
