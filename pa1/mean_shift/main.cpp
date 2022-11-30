@@ -7,14 +7,45 @@
 #include <algorithm>
 #include <chrono>
 
+std::chrono::high_resolution_clock::time_point t1;
+std::chrono::high_resolution_clock::time_point t2;
+
+void start_timer()
+{
+    std::cout << "Timer started" << std::endl;
+    t1 = std::chrono::high_resolution_clock::now();
+}
+
+void end_timer()
+{
+    t2 = std::chrono::high_resolution_clock::now();
+    std::cout << "Timer ended" << std::endl;
+}
+void print_elapsed_time()
+{
+    std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " milliseconds\n"
+              << std::endl;
+}
+
 struct Node
 {
     int label;
     std::vector<int> features;
 };
 
+void show_features(Node n)
+{
+    for (auto f : n.features)
+    {
+        std::cout << f << " ";
+    }
+    std::cout << std::endl;
+}
+
 std::vector<Node> read_file(const char *filename)
 {
+    int records_max = 500;
+    int records_counter = 0;
     std::vector<Node> data;
     std::ifstream file(filename);
     std::string value;
@@ -24,7 +55,7 @@ std::vector<Node> read_file(const char *filename)
         std::string line;
         std::getline(file, line);
 
-        while (std::getline(file, line))
+        while (std::getline(file, line) && records_counter < records_max)
         {
             Node tmp;
             std::stringstream str(line);
@@ -35,40 +66,96 @@ std::vector<Node> read_file(const char *filename)
                 tmp.features.push_back(std::stoi(value));
             }
             data.push_back(tmp);
+            records_counter += 1;
         }
     }
     return data;
 }
 
+int euclide_distance(Node *p, Node *p_tmp)
+{
+    int dist = 0;
+    for (int i = 0; i < p->features.size(); i++)
+    {
+        dist += std::pow(p_tmp->features[i] - p->features[i], 2);
+    }
+    return dist;
+}
+
+double kernel(int dist)
+{
+    double kernel_bandwitch = 5;
+    return std::exp(-dist / (2 * kernel_bandwitch * kernel_bandwitch));
+}
+
+Node shift(Node point, std::vector<Node> original_points)
+{
+    double scale_factor = 0;
+    for (auto p_temp : original_points)
+    {
+        int dist = euclide_distance(&point, &p_temp);
+        // std::cout << "dist" << dist << std::endl;
+        double weight = kernel(dist);
+        // std::cout << "weight" << weight << std::endl;
+
+        for (int i = 0; i < point.features.size(); i++)
+        {
+            point.features[i] += p_temp.features[i] * weight;
+        }
+        scale_factor += weight;
+    }
+    for (int i = 0; i < point.features.size(); i++)
+    {
+        point.features[i] /= scale_factor;
+    }
+    return point;
+}
+
 void mean_shift(std::vector<Node> nodes)
 {
-    auto original_data = nodes;
+    auto points_copy = nodes;
+    int MAX_ITERS = 50000;
+    int iter = 0;
 
-    while (true)
+    while (true && iter < MAX_ITERS)
     {
-        for (int i = 0; i < nodes.size(); i++)
+        // save previous position
+        auto prev_centroids = points_copy;
+
+        // shift every point
+        for (int i = 0; i < points_copy.size(); i++)
         {
-            for (int j = 0; j < nodes.size(); j++)
+            points_copy[i] = shift(points_copy[i], nodes);
+        }
+
+        bool optimized = true;
+        // Check if centroids moved from previous position
+        for (int i = 0; i < points_copy.size(); i++)
+        {
+            if (points_copy[i].features != prev_centroids[i].features)
             {
-                if (i != j)
-                {
-                    std::transform(original_data[j].features.begin(), original_data[j].features.end(), nodes[i].features.begin(), nodes[i].features.begin(), std::minus<int>());
-                }
+                optimized = false;
+                break;
             }
         }
+
+        iter += 1;
+        // if all centroids are optimized end the mean shift
+        if (optimized)
+        {
+            std::cout << "Optimazed solution" << std::endl;
+            break;
+        }
     }
+    std::cout << "Iteration rounds: " << iter << std::endl;
 }
 
 int main(int argc, char const *argv[])
 {
     std::vector<Node> data = read_file("mnist_test.csv");
-
-    // std::cout << data[0].label << "/";
-    // for (auto f : data[0].features)
-    // {
-    //     std::cout << f << " ";
-    // }
-
-    std::cout << "Hello World!" << std::endl;
+    start_timer();
+    mean_shift(data);
+    end_timer();
+    print_elapsed_time();
     return 0;
 }
