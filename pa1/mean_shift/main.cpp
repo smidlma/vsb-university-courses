@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <chrono>
+#include <omp.h>
 
 std::chrono::high_resolution_clock::time_point t1;
 std::chrono::high_resolution_clock::time_point t2;
@@ -44,7 +45,7 @@ void show_features(Node n)
 
 std::vector<Node> read_file(const char *filename)
 {
-    int records_max = 100;
+    int records_max = 1000;
     int records_counter = 0;
     std::vector<Node> data;
     std::ifstream file(filename);
@@ -77,7 +78,7 @@ int euclide_distance(Node *p, Node *p_tmp)
     int dist = 0;
     for (int i = 0; i < p->features.size(); i++)
     {
-        dist += std::pow(p_tmp->features[i] - p->features[i], 2);
+        dist += std::sqrt(std::pow(p_tmp->features[i] - p->features[i], 2));
     }
     return dist;
 }
@@ -97,7 +98,7 @@ Node shift(Node point, std::vector<Node> original_points)
         // std::cout << "dist" << dist << std::endl;
         double weight = kernel(dist);
         // std::cout << "weight" << weight << std::endl;
-
+        // #pragma omp parallel for
         for (int i = 0; i < point.features.size(); i++)
         {
             point.features[i] += p_temp.features[i] * weight;
@@ -122,7 +123,8 @@ void mean_shift(std::vector<Node> nodes)
         // save previous position
         auto prev_centroids = points_copy;
 
-        // shift every point
+// shift every point
+#pragma omp parallel for
         for (int i = 0; i < points_copy.size(); i++)
         {
             points_copy[i] = shift(points_copy[i], nodes);
